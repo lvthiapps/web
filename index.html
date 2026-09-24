@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bảng Cân Lúa Mobile</title>
+<style>
+    * { box-sizing: border-box; font-family: -apple-system, Arial, sans-serif; }
+  body { background: #f5f5f5; margin: 0; padding: 0; }
+
+.header {
+    position: sticky; top: 0; z-index: 10;
+    background: #2d6a4f; color: white;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+.header-top { display: flex; justify-content: space-between; align-items: center; }
+.header h2 { margin: 0; font-size: 18px; }
+.save-status {
+    font-size: 11px;
+    opacity: 0.8;
+    text-align: right;
+    margin-top: 4px;
+  }
+
+.info-bar {
+    background: white;
+    padding: 12px;
+    margin: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+.info-grid input,.info-grid select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+    width: 100%;
+  }
+
+.btn-group {
+    display: flex;
+    gap: 8px;
+    padding: 0 12px 12px;
+    overflow-x: auto;
+  }
+.btn {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+.btn-primary { background: #2d6a4f; color: white; }
+.btn-secondary { background: #40916c; color: white; }
+.btn-danger { background: #d00000; color: white; }
+.btn-outline { background: white; color: #2d6a4f; border: 1px solid #2d6a4f; }
+.btn-warning { background: #f77f00; color: white; }
+
+.board {
+    background: white;
+    margin: 0 12px 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+
+.board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: #e9f5f1;
+    border-bottom: 1px solid #ddd;
+  }
+.board-title { font-weight: bold; font-size: 16px; color: #1b4332; }
+
+.table-wrapper { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  th, td {
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    text-align: center;
+  }
+
+  th {
+    background: #95d5b2;
+    padding: 10px 5px;
+    font-size: 14px;
+  }
+
+  input.cell {
+    width: 100%;
+    border: none;
+    padding: 14px 5px;
+    text-align: center;
+    font-size: 18px;
+    outline: none;
+    background: transparent;
+    -webkit-appearance: none;
+  }
+  input.cell:focus { background: #e9f5f1; }
+
+.total-row { background: #f1faee; font-weight: bold; }
+.total-row td { padding: 10px 5px; font-size: 15px; }
+
+.board-total {
+    padding: 12px 15px;
+    text-align: right;
+    font-size: 16px;
+    font-weight: bold;
+    color: #d00000;
+    background: #fff8f8;
+  }
+
+.grand-total {
+    position: sticky; bottom: 0;
+    background: #1b4332; color: white;
+    padding: 16px; text-align: center;
+    font-size: 20px; font-weight: bold;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+  }
+
+  td { min-height: 52px; }
+
+  @media print {
+    body { background: white; }
+.header,.btn-group,.grand-total,.btn,.info-bar { display: none!important; }
+.board { box-shadow: none; margin: 0; page-break-after: always; }
+    @page { size: A5 portrait; margin: 10mm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h2>⚖️ Bảng Cân Lúa</h2>
+    <button class="btn btn-danger" onclick="xoaTatCa()">Xóa hết</button>
+  </div>
+  <div class="save-status" id="saveStatus">Đã lưu</div>
+</div>
+
+<div class="info-bar">
+  <div class="info-grid">
+    <input type="text" id="tenChung" placeholder="Tên chủ ruộng" oninput="updateChung()">
+    <input type="text" id="ngayChung" placeholder="Ngày cân" oninput="updateChung()">
+    <select id="loaiChung" onchange="updateChung()">
+      <option>OM18</option>
+      <option>Đài Thơm 8</option>
+      <option>OM5451</option>
+      <option>IR50404</option>
+      <option>Khác</option>
+    </select>
+    <input type="number" id="giaChung" placeholder="Đơn giá đ/kg" oninput="updateChung()">
+  </div>
+</div>
+
+<div class="btn-group">
+  <button class="btn btn-primary" onclick="themBang()">+ Thêm bảng</button>
+  <button class="btn btn-secondary" onclick="xuatExcel()">📊 Excel</button>
+  <button class="btn btn-warning" onclick="saoLuu()">💾 Sao lưu</button>
+  <button class="btn btn-outline" onclick="khoiPhuc()">📂 Khôi phục</button>
+  <button class="btn btn-outline" onclick="inPhieu()">🖨️ In</button>
+</div>
+
+<div id="boards"></div>
+
+<div class="grand-total" id="grandTotal">Tổng: 0.0 kg | 0 đ</div>
+
+<input type="file" id="fileInput" accept=".json" style="display:none" onchange="docFile(this)">
+
+<script>
+const KEY = "bangCanDataCol_v12";
+let boards = JSON.parse(localStorage.getItem(KEY)) || [createBoard()];
+let chung = JSON.parse(localStorage.getItem(KEY+"_chung")) || {
+  ten: "", ngay: new Date().toLocaleDateString('vi-VN'), loaiLua: "OM18", donGia: ""
+};
+let saveTimer = null;
+
+document.getElementById("tenChung").value = chung.ten;
+document.getElementById("ngayChung").value = chung.ngay;
+document.getElementById("loaiChung").value = chung.loaiLua;
+document.getElementById("giaChung").value = chung.donGia;
+
+function createBoard() {
+  return { id: Date.now() + Math.random(), cells: Array(25).fill("") };
+}
+
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(boards));
+    localStorage.setItem(KEY+"_chung", JSON.stringify(chung));
+    showSavedStatus();
+  } catch(e) {
+    alert("Lỗi lưu dữ liệu. Bộ nhớ có thể đã đầy!");
+  }
+}
+
+function autoSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 300);
+  document.getElementById("saveStatus").textContent = "Đang lưu...";
+}
+
+function showSavedStatus() {
+  document.getElementById("saveStatus").textContent = "Đã lưu lúc " + new Date().toLocaleTimeString('vi-VN');
+}
+
+function toKg(raw) {
+  let n = parseInt(raw) || 0;
+  return n / 10;
+}
+
+function formatNum(n) {
+  return n.toFixed(1);
+}
+
+function formatTien(n) {
+  return n.toLocaleString('vi-VN') + " đ";
+}
+
+function updateChung() {
+  chung.ten = document.getElementById("tenChung").value;
+  chung.ngay = document.getElementById("ngayChung").value;
+  chung.loaiLua = document.getElementById("loaiChung").value;
+  chung.donGia = document.getElementById("giaChung").value;
+  autoSave();
+  updateTotals();
+}
+
+function render() {
+  const container = document.getElementById("boards");
+  container.innerHTML = "";
+
+  boards.forEach((board, bIndex) => {
+    let html = `
+      <div class="board">
+        <div class="board-header">
+          <div class="board-title">Bảng ${bIndex + 1}</div>
+          <button class="btn btn-danger" onclick="deleteBoard(${bIndex})">Xóa</button>
+        </div>
+        <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>C1</th><th>C2</th><th>C3</th><th>C4</th><th>C5</th></tr>
+          </thead>
+          <tbody>
+    `;
+
+    for (let row = 0; row < 5; row++) {
+      html += "<tr>";
+      for (let col = 0; col < 5; col++) {
+        let idx = row * 5 + col;
+        let raw = board.cells[idx];
+        html += `<td><input type="text" class="cell"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  id="cell-${bIndex}-${idx}"
+                  value="${raw}"
+                  data-board="${bIndex}"
+                  data-idx="${idx}"
+                  data-col="${col}"
+                  data-row="${row}"
+                  oninput="handleInput(this)"
+                  onkeydown="handleKey(event, this)"
+                  placeholder=""></td>`;
+      }
+      html += "</tr>";
+    }
+
+    html += `<tr class="total-row">
+      <td id="col-0-${bIndex}">0.0</td>
+      <td id="col-1-${bIndex}">0.0</td>
+      <td id="col-2-${bIndex}">0.0</td>
+      <td id="col-3-${bIndex}">0.0</td>
+      <td id="col-4-${bIndex}">0.0</td>
+    </tr></tbody></table></div>
+      <div class="board-total" id="board-total-${bIndex}">Tổng: 0.0 kg</div>
+    </div>`;
+
+    container.innerHTML += html;
+  });
+
+  updateTotals();
+}
+
+function updateTotals() {
+  let grandKg = 0;
+  let donGia = parseFloat(chung.donGia) || 0;
+
+  boards.forEach((board, bIndex) => {
+    let boardKg = 0;
+    let colTotals = [0, 0, 0, 0, 0];
+
+    for (let i = 0; i < 25; i++) {
+      let val = toKg(board.cells[i]);
+      colTotals[i % 5] += val;
+      boardKg += val;
+    }
+
+    grandKg += boardKg;
+
+    for (let c = 0; c < 5; c++) {
+      document.getElementById(`col-${c}-${bIndex}`).innerText = formatNum(colTotals[c]);
+    }
+    document.getElementById(`board-total-${bIndex}`).innerText = `Tổng: ${formatNum(boardKg)} kg`;
+  });
+
+  let grandMoney = grandKg * donGia;
+  document.getElementById("grandTotal").innerText =
+    `Tổng: ${formatNum(grandKg)} kg | ${formatTien(grandMoney)}`;
+}
+
+function handleInput(el) {
+  let val = el.value.replace(/[^0-9]/g, "");
+  if (val.length > 3) val = val.slice(0, 3);
+  el.value = val;
+
+  let bIndex = parseInt(el.dataset.board);
+  let idx = parseInt(el.dataset.idx);
+  let col = parseInt(el.dataset.col);
+  let row = parseInt(el.dataset.row);
+
+  boards[bIndex].cells[idx] = val;
+  autoSave();
+  updateTotals();
+
+  if (val.length === 3) {
+    let nextRow = row + 1;
+    let nextIdx = nextRow * 5 + col;
+
+    if (nextRow < 5) {
+      document.getElementById(`cell-${bIndex}-${nextIdx}`).focus();
+    } else {
+      let nextCol = col + 1;
+      if (nextCol < 5) {
+        document.getElementById(`cell-${bIndex}-${nextCol}`).focus();
+      } else {
+        if (boards[bIndex].cells.every(v => v!== "")) {
+          boards.push(createBoard());
+          autoSave();
+          render();
+          setTimeout(() => {
+            document.getElementById(`cell-${boards.length-1}-0`).focus();
+          }, 50);
+        }
+      }
+    }
+  }
+}
+
+function handleKey(e, el) {
+  if (e.key === "Backspace" && el.value === "") {
+    let row = parseInt(el.dataset.row);
+    let col = parseInt(el.dataset.col);
+    let bIndex = parseInt(el.dataset.board);
+
+    let prevRow = row - 1;
+    let prevIdx = prevRow * 5 + col;
+
+    if (prevRow >= 0) {
+      document.getElementById(`cell-${bIndex}-${prevIdx}`).focus();
+    } else if (col > 0) {
+      let prevIdx = 4 * 5 + (col - 1);
+      document.getElementById(`cell-${bIndex}-${prevIdx}`).focus();
+    }
+  }
+}
+
+function themBang() {
+  boards.push(createBoard());
+  autoSave();
+  render();
+  setTimeout(() => {
+    document.getElementById(`cell-${boards.length-1}-0`).focus();
+  }, 50);
+}
+
+function deleteBoard(index) {
+  if (boards.length === 1) {
+    alert("Phải có ít nhất 1 bảng!");
+    return;
+  }
+  if (confirm("Xóa bảng này?")) {
+    boards.splice(index, 1);
+    autoSave();
+    render();
+  }
+}
+
+function xoaTatCa() {
+  if (confirm("Xóa toàn bộ dữ liệu? Không khôi phục được trừ khi có file sao lưu!")) {
+    boards = [createBoard()];
+    chung = {ten: "", ngay: new Date().toLocaleDateString('vi-VN'), loaiLua: "OM18", donGia: ""};
+    document.getElementById("tenChung").value = "";
+    document.getElementById("ngayChung").value = chung.ngay;
+    document.getElementById("loaiChung").value = "OM18";
+    document.getElementById("giaChung").value = "";
+    autoSave();
+    render();
+  }
+}
+
+function xuatExcel() {
+  let grandKg = 0;
+  boards.forEach(b => {
+    b.cells.forEach(c => grandKg += toKg(c));
+  });
+
+  let csv = `Tên chủ ruộng,${chung.ten}\n`;
+  csv += `Ngày cân,${chung.ngay}\n`;
+  csv += `Loại lúa,${chung.loaiLua}\n`;
+  csv += `Đơn giá,${chung.donGia}\n`;
+  csv += `Tổng kg,${grandKg}\n`;
+  csv += `Tổng tiền,${grandKg * (parseFloat(chung.donGia)||0)}\n\n`;
+  csv += "Bang,Vi tri,Khoi luong kg\n";
+
+  boards.forEach((board, bIndex) => {
+    for (let i = 0; i < 25; i++) {
+      if (board.cells[i]) {
+        let row = Math.floor(i / 5) + 1;
+        let col = (i % 5) + 1;
+        csv += `Bang ${bIndex+1},R${row}C${col},${toKg(board.cells[i])}\n`;
+      }
+    }
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "bang_can_lua_" + new Date().toLocaleDateString('vi-VN').replace(/\//g, '-') + ".csv";
+  a.click();
+}
+
+// TÍNH NĂNG MỚI: SAO LƯU & KHÔI PHỤC
+function saoLuu() {
+  const data = {
+    boards: boards,
+    chung: chung,
+    ngaySaoLuu: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "backup_canlua_" + new Date().toLocaleDateString('vi-VN').replace(/\//g, '-') + ".json";
+  a.click();
+  alert("Đã xuất file sao lưu. Gửi file này qua Zalo/Google Drive để lưu an toàn!");
+}
+
+function khoiPhuc() {
+  document.getElementById("fileInput").click();
+}
+
+function docFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (confirm("Khôi phục dữ liệu này? Dữ liệu hiện tại sẽ bị ghi đè!")) {
+        boards = data.boards || [createBoard()];
+        chung = data.chung || chung;
+        document.getElementById("tenChung").value = chung.ten;
+        document.getElementById("ngayChung").value = chung.ngay;
+        document.getElementById("loaiChung").value = chung.loaiLua;
+        document.getElementById("giaChung").value = chung.donGia;
+        autoSave();
+        render();
+        alert("Khôi phục thành công!");
+      }
+    } catch(err) {
+      alert("File không hợp lệ!");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function inPhieu() {
+  window.print();
+}
+
+window.addEventListener('beforeunload', save);
+window.addEventListener('pagehide', save);
+window.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') save();
+});
+
+document.addEventListener("DOMContentLoaded", render);
+</script>
+
+</body>
+</html>
