@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sổ Cân Lúa Chuyên Nghiệp - Bản Pro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #f4f6f8;
+            display: flex;
+            flex-direction: column;
+            min-height: 95vh;
+        }
+        .content-wrapper { flex: 1; }
+        h2 { color: #2e7d32; text-align: center; margin-top: 5px; font-size: 22px; }
+        .form-group { margin-bottom: 10px; }
+        .row { display: flex; gap: 10px; }
+        .row .form-group { flex: 1; }
+        label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 13px; }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .summary-card {
+            background-color: #e8f5e9;
+            border: 2px solid #a5d6a7;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+        .summary-card p { margin: 6px 0; font-size: 15px; border-bottom: 1px dashed #c8e6c9; padding-bottom: 4px; }
+        .summary-card p:last-child { border-bottom: none; }
+        .total-price { color: #2e7d32; font-weight: bold; }
+        .remain-price { color: #d32f2f; font-size: 20px; font-weight: bold; }
+
+        .action-buttons { display: flex; gap: 8px; margin-bottom: 15px; }
+        .btn-zalo { flex: 1.5; background-color: #0068ff; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-print { flex: 1; background-color: #ff9800; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-reset { flex: 1; background-color: #f44336; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+
+        .add-section { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 15px; }
+        .btn-add { background-color: #1976d2; color: white; border: none; padding: 0 15px; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; height: 40px; }
+        
+        .table-container { margin-bottom: 20px; background: white; padding: 8px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow-x: auto; }
+        .table-title { font-weight: bold; color: #333; margin-bottom: 8px; font-size: 15px; display: flex; justify-content: space-between; }
+        .table-total { color: #d32f2f; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { border: 1px solid #b0bec5; text-align: center; padding: 8px 2px; font-size: 15px; position: relative; height: 25px; }
+        th { background-color: #eceff1; font-size: 12px; color: #546e7a; }
+        .sum-row td { background-color: #fff9c4; color: #d32f2f; font-weight: bold; font-size: 14px; }
+        .del-btn { position: absolute; top: 1px; right: 2px; color: #f44336; font-size: 12px; cursor: pointer; font-weight: bold; background: rgba(255,255,255,0.8); border-radius: 50%; width: 16px; height: 16px; line-height: 16px; }
+        #nhapKy { border: 2px solid #1976d2; background-color: #e3f2fd; font-weight: bold; font-size: 18px; }
+
+        .footer { text-align: center; padding: 15px 0; margin-top: 20px; font-size: 13px; color: #78909c; border-top: 1px solid #cfd8dc; font-weight: bold; }
+
+        @media print {
+            .add-section, .action-buttons, .del-btn, label, input { display: none !important; }
+            body { background-color: white; }
+            .summary-card { border: 1px solid #000; }
+            
+            /* Hiển thị thông tin ngày và giống lúa cho bản in */
+            #thongTinIn {
+                display: block !important;
+                margin-bottom: 10px;
+                font-size: 16px;
+            }
+        }
+        
+        #thongTinIn { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="content-wrapper">
+        <h2>Sổ Cân Lúa (Bản Pro)</h2>
+
+        <div id="thongTinIn">
+            <p><strong>Ngày cân:</strong> <span id="inNgay"></span></p>
+            <p><strong>Giống lúa:</strong> <span id="inGiong"></span> &nbsp; | &nbsp; <strong>Giá:</strong> <span id="inGia"></span> đ/kg</p>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Ngày cân:</label>
+                <input type="date" id="ngayCan" onchange="luuCauHinh()">
+            </div>
+            <div class="form-group">
+                <label>Giống lúa:</label>
+                <input type="text" id="tenGiong" placeholder="VD: OM 18" oninput="luuCauHinh()">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Giá (VNĐ/kg):</label>
+                <input type="number" id="giaLua" placeholder="6300" oninput="capNhatGiaoDien()">
+            </div>
+            <div class="form-group">
+                <label>Trừ bì (kg/bao):</label>
+                <input type="number" id="truBi" value="0.1" step="0.1" oninput="capNhatGiaoDien()">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Tiền cọc trước (VNĐ):</label>
+            <input type="number" id="tienCoc" placeholder="Nhập tiền cọc..." oninput="capNhatGiaoDien()">
+        </div>
+
+        <div class="summary-card" id="ketQuaIn">
+            <p>📦 <strong>Tổng số bao:</strong> <span id="tongSoBao">0</span> bao</p>
+            <p>⚖️ <strong>Số lượng qua cân:</strong> <span id="trongLuongGoc">0,00</span> kg</p>
+            <p>🌾 <strong>Số lượng tổng (đã trừ bì):</strong> <span id="trongLuongThuc">0,00</span> kg</p>
+            <p>💰 <strong>Tổng thành tiền:</strong> <span class="total-price" id="thanhTien">0 ₫</span></p>
+            <p>📉 <strong>Đã trừ cọc:</strong> <span id="hienThiTienCoc">0 ₫</span></p>
+            <p>🚩 <strong>CÒN LẠI PHẢI TRẢ:</strong> <span class="remain-price" id="conLai">0 ₫</span></p>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn-zalo" onclick="copyGuiZalo()">📋 Gửi Zalo</button>
+            <button class="btn-print" onclick="window.print()">🖨️ In / PDF</button>
+            <button class="btn-reset" onclick="taoSoMoi()">🔄 Mới</button>
+        </div>
+
+        <div class="add-section">
+            <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <label>Nhập vào số ký (Gõ 3 số tự nhảy):</label>
+                <input type="number" id="nhapKy" placeholder="504 -> 50.4kg" step="0.1" oninput="xuLyNhapNhanh()" onkeypress="xuLyPhimEnter(event)">
+            </div>
+            <button class="btn-add" onclick="themMangCua()">THÊM</button>
+        </div>
+
+        <div id="khuVucBangCan"></div>
+    </div>
+
+    <div class="footer">
+        Copyright © Lê Văn Thì
+    </div>
+
+    <script>
+        let danhSachBao = [];
+
+        window.onload = function() {
+            // Lấy ngày hôm nay
+            let today = new Date().toISOString().split('T')[0];
+
+            if (localStorage.getItem("canLua_danhSach")) {
+                danhSachBao = JSON.parse(localStorage.getItem("canLua_danhSach"));
+            }
+            
+            document.getElementById("ngayCan").value = localStorage.getItem("canLua_ngay") || today;
+            document.getElementById("tenGiong").value = localStorage.getItem("canLua_ten") || "";
+            document.getElementById("giaLua").value = localStorage.getItem("canLua_gia") || "";
+            document.getElementById("truBi").value = localStorage.getItem("canLua_bi") || "0.1";
+            document.getElementById("tienCoc").value = localStorage.getItem("canLua_coc") || "";
+            capNhatGiaoDien();
+        };
+
+        function luuCauHinh() {
+            localStorage.setItem("canLua_ngay", document.getElementById("ngayCan").value);
+            localStorage.setItem("canLua_ten", document.getElementById("tenGiong").value);
+            localStorage.setItem("canLua_gia", document.getElementById("giaLua").value);
+            localStorage.setItem("canLua_bi", document.getElementById("truBi").value);
+            localStorage.setItem("canLua_coc", document.getElementById("tienCoc").value);
+            localStorage.setItem("canLua_danhSach", JSON.stringify(danhSachBao));
+            
+            // Cập nhật thông tin cho bản in
+            capNhatThongTinIn();
+        }
+
+        function formatSo(so) {
+            return so.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatTienVND(so) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(so);
+        }
+
+        function capNhatThongTinIn() {
+            let ngay = document.getElementById("ngayCan").value;
+            let parts = ngay.split('-');
+            let ngayVn = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : ngay;
+            
+            document.getElementById("inNgay").innerText = ngayVn;
+            document.getElementById("inGiong").innerText = document.getElementById("tenGiong").value || "(Chưa nhập)";
+            document.getElementById("inGia").innerText = formatSo(parseFloat(document.getElementById("giaLua").value) || 0).replace(",00", "");
+        }
+
+        function xuLyNhapNhanh() {
+            let inputField = document.getElementById("nhapKy");
+            let val = inputField.value;
+            if (val.length === 3 && !val.includes('.')) {
+                let soKy = parseInt(val) / 10; 
+                if (!isNaN(soKy) && soKy > 0) {
+                    danhSachBao.push(soKy);
+                    inputField.value = ""; 
+                    capNhatGiaoDien();
+                }
+            }
+        }
+
+        function themMangCua() {
+            let inputKy = document.getElementById("nhapKy");
+            let soKy = parseFloat(inputKy.value);
+            if (!isNaN(soKy) && soKy > 0) {
+                danhSachBao.push(soKy);
+                inputKy.value = ""; 
+                inputKy.focus(); 
+                capNhatGiaoDien();
+            }
+        }
+
+        function xuLyPhimEnter(event) { if (event.key === "Enter") themMangCua(); }
+
+        function xoaBao(index) {
+            if(confirm("Xóa mã cân này?")) {
+                danhSachBao.splice(index, 1);
+                capNhatGiaoDien();
+            }
+        }
+
+        function taoSoMoi() {
+            if(confirm("Bạn có chắc chắn muốn xóa hết dữ liệu để tạo sổ mới không?")) {
+                danhSachBao = [];
+                document.getElementById("tienCoc").value = "";
+                // Cập nhật lại ngày hiện tại khi tạo sổ mới
+                document.getElementById("ngayCan").value = new Date().toISOString().split('T')[0];
+                luuCauHinh();
+                capNhatGiaoDien();
+            }
+        }
+
+        function tinhToan() {
+            let gia = parseFloat(document.getElementById("giaLua").value) || 0;
+            let bi = parseFloat(document.getElementById("truBi").value) || 0;
+            let coc = parseFloat(document.getElementById("tienCoc").value) || 0;
+            
+            let tongBao = danhSachBao.length;
+            let tongKyGoc = danhSachBao.reduce((a, b) => a + b, 0); 
+            let kyThuc = Math.max(0, tongKyGoc - (tongBao * bi));
+            let tongTien = kyThuc * gia;
+            let conLai = tongTien - coc;
+
+            document.getElementById("tongSoBao").innerText = tongBao;
+            document.getElementById("trongLuongGoc").innerText = formatSo(tongKyGoc);
+            document.getElementById("trongLuongThuc").innerText = formatSo(kyThuc);
+            document.getElementById("thanhTien").innerText = formatTienVND(tongTien);
+            document.getElementById("hienThiTienCoc").innerText = formatTienVND(coc);
+            document.getElementById("conLai").innerText = formatTienVND(conLai);
+
+            luuCauHinh(); 
+        }
+
+        function veCacBang5x5() {
+            const container = document.getElementById("khuVucBangCan");
+            container.innerHTML = ""; 
+            const tongSoBao = danhSachBao.length;
+            let soLuongBang = Math.max(1, Math.ceil(tongSoBao / 25));
+            if (tongSoBao > 0 && tongSoBao % 25 === 0) soLuongBang++;
+
+            for (let b = 0; b < soLuongBang; b++) {
+                let offsetBang = b * 25; 
+                let tongKyCuaBang = 0; 
+                for (let i = offsetBang; i < offsetBang + 25; i++) {
+                    if (i < danhSachBao.length) tongKyCuaBang += danhSachBao[i];
+                }
+                
+                let htmlBang = `<div class="table-container">
+                    <div class="table-title">
+                        <span>BẢNG ${b + 1}</span>
+                        <span class="table-total">Tổng: ${formatSo(tongKyCuaBang)} kg</span>
+                    </div>
+                    <table>
+                        <thead><tr><th>C1</th><th>C2</th><th>C3</th><th>C4</th><th>C5</th></tr></thead>
+                        <tbody>`;
+
+                for (let hang = 0; hang < 5; hang++) {
+                    htmlBang += `<tr>`;
+                    for (let cot = 0; cot < 5; cot++) {
+                        let chiSo = offsetBang + (cot * 5) + hang; 
+                        if (chiSo < danhSachBao.length) {
+                            htmlBang += `<td>${danhSachBao[chiSo]} <span class="del-btn" onclick="xoaBao(${chiSo})">&times;</span></td>`;
+                        } else { htmlBang += `<td></td>`; }
+                    }
+                    htmlBang += `</tr>`;
+                }
+
+                htmlBang += `<tr class="sum-row">`;
+                for (let cot = 0; cot < 5; cot++) {
+                    let tongCot = 0;
+                    for (let hang = 0; hang < 5; hang++) {
+                        let chiSo = offsetBang + (cot * 5) + hang;
+                        if (chiSo < danhSachBao.length) tongCot += danhSachBao[chiSo];
+                    }
+                    htmlBang += `<td>${tongCot > 0 ? formatSo(tongCot) : ''}</td>`;
+                }
+                htmlBang += `</tr></tbody></table></div>`;
+                container.innerHTML += htmlBang;
+            }
+        }
+
+        function capNhatGiaoDien() {
+            tinhToan();
+            veCacBang5x5();
+        }
+
+        function copyGuiZalo() {
+            if (danhSachBao.length === 0) { alert("Chưa có dữ liệu!"); return; }
+            
+            let ngay = document.getElementById("ngayCan").value;
+            let parts = ngay.split('-');
+            let ngayVn = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : ngay;
+
+            let ten = document.getElementById("tenGiong").value || "Trống";
+            let gia = formatSo(parseFloat(document.getElementById("giaLua").value) || 0).replace(",00", "");
+            let bi = document.getElementById("truBi").value || "0";
+            
+            let tongBao = document.getElementById("tongSoBao").innerText;
+            let goc = document.getElementById("trongLuongGoc").innerText;
+            let thuc = document.getElementById("trongLuongThuc").innerText;
+            let tongTien = document.getElementById("thanhTien").innerText;
+            let coc = document.getElementById("hienThiTienCoc").innerText;
+            let conLai = document.getElementById("conLai").innerText;
+
+            let text = `🌾 PHIẾU CÂN LÚA 🌾\nNgày: ${ngayVn}\nGiống: ${ten}\nGiá: ${gia} đ/kg | Bì: ${bi} kg\n`;
+            text += `------------------------\n👉 Tổng: ${tongBao} bao | ${goc} kg\n👉 Thực: ${thuc} kg\n`;
+            text += `💰 TỔNG TIỀN: ${tongTien}\n📉 ĐÃ CỌC: ${coc}\n🚩 CÒN LẠI: ${conLai}\n------------------------\n`;
+            text += `CHI TIẾT:\n`;
+            for (let i = 0; i < danhSachBao.length; i++) {
+                text += danhSachBao[i].toFixed(1) + ((i + 1) % 5 === 0 ? "\n" : " | ");
+            }
+
+            let textArea = document.createElement("textarea");
+            textArea.value = text; document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert("✅ Đã copy! Anh mở Zalo nhấn 'Dán' để gửi nhé.");
+            } catch (err) { alert("Lỗi copy."); }
+            document.body.removeChild(textArea);
+        }
+    </script>
+</body>
+</html>

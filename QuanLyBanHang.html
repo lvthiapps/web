@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>App Bán Hàng Mobile PRO</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #27ae60;
+            --danger: #e74c3c;
+            --info: #2980b9;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f0f2f5; font-size: 14px; }
+        nav { background: var(--primary); padding: 10px; display: flex; gap: 8px; position: sticky; top: 0; z-index: 100; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        nav::-webkit-scrollbar { display: none; }
+        nav { -ms-overflow-style: none; scrollbar-width: none; }
+        nav button { background: rgba(255,255,255,0.1); border: none; color: white; padding: 10px 15px; cursor: pointer; border-radius: 20px; font-weight: 600; flex-shrink: 0; }
+        nav button.active { background: var(--accent); }
+        .container { padding: 10px; max-width: 1200px; margin: auto; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .card h3 { margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 10px;}
+        .card-header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;}
+        .card-header-flex h3 { border: none; padding: 0; margin: 0; }
+        section { display: none; }
+        section.active { display: block; }
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        table th, table td { border: 1px solid #eee; padding: 10px; text-align: left; font-size: 0.9rem;}
+        table th { background: #f8f9fa; }
+        table tfoot th { background: #e3f2fd; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem;}
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 1rem;}
+        input:focus, select:focus { outline: none; border-color: var(--accent); }
+        .btn { padding: 12px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; width: 100%; box-sizing: border-box;}
+        .btn-success { background: var(--accent); color: white; }
+        .btn-danger { background: var(--danger); color: white; padding: 8px; font-size: 0.8rem;}
+        .btn-info { background: var(--info); color: white; }
+        .btn-warning { background: var(--warning); color: white; padding: 8px; font-size: 0.8rem;}
+        .btn-small { width: auto; padding: 6px 12px; font-size: 0.85rem;}
+        .d-flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;}
+        .d-flex > * { flex: 1; min-width: 120px; }
+        .flex-small { flex: 0.5 !important; min-width: 80px !important;}
+        .pos-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; max-height: 40vh; overflow-y: auto; padding-right: 5px; }
+        .product-card { border: 1px solid #e0e0e0; padding: 10px 5px; text-align: center; cursor: pointer; border-radius: 8px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: relative;}
+        .product-card:active { background: #e8f5e9; border-color: var(--accent); }
+        .product-card strong { display: block; font-size: 0.9rem; margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+        .stock-badge { position: absolute; top: -5px; right: -5px; background: var(--info); color: white; font-size: 0.7rem; padding: 2px 5px; border-radius: 10px; font-weight: bold;}
+        .out-of-stock { opacity: 0.5; border-color: var(--danger); cursor: not-allowed; }
+        .out-of-stock .stock-badge { background: var(--danger); }
+        
+        .cart-item-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #eee; padding: 10px 0;}
+        .cart-item-info { display: flex; flex-direction: column; }
+        .cart-item-price { font-weight: bold; color: var(--accent); }
+        .cart-btn-remove { background: #ffeaeb; color: var(--danger); border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; margin-left: 10px;}
+        .summary-box { background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #eee;}
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem;}
+        
+        @media (min-width: 768px) { .pos-grid { grid-template-columns: 3fr 2fr; } .btn { width: auto; } body { font-size: 16px; } .product-grid { max-height: 60vh; } }
+        
+        #invoice-print { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #invoice-print, #invoice-print * { visibility: visible; }
+            #invoice-print { display: block; position: absolute; left: 0; top: 0; width: 100%; padding: 10px; font-size: 12px;}
+            nav, .btn, .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <button onclick="showSection('pos')" id="btn-pos" class="active">🛒 Bán Hàng</button>
+    <button onclick="showSection('products')">📦 Kho & Sản Phẩm</button>
+    <button onclick="showSection('customers')">👥 Công Nợ Khách</button>
+    <button onclick="showSection('history')">📜 Lịch Sử</button>
+    <button onclick="showSection('reports')">📊 Báo Cáo</button>
+</nav>
+
+<div class="container">
+    
+    <!-- SECTION: BÁN HÀNG -->
+    <section id="pos" class="active">
+        <div class="pos-grid">
+            <div class="card" style="margin-bottom: 0;">
+                <div class="form-group"><input type="text" placeholder="🔍 Tìm tên sản phẩm..." onkeyup="filterProducts(this.value)"></div>
+                <div id="pos-product-list" class="product-grid"></div>
+            </div>
+            
+            <div class="card" style="border: 2px solid var(--accent);">
+                <h3>Giỏ Hàng & Thanh Toán</h3>
+                <div class="form-group">
+                    <select id="pos-customer-select" onchange="renderCart()"></select>
+                </div>
+                
+                <div id="cart-items" style="min-height: 80px; margin-bottom: 10px; border-bottom: 2px solid #eee;">
+                    <p style="color: #888; text-align: center; margin-top: 20px;">Giỏ hàng trống</p>
+                </div>
+
+                <div class="d-flex" style="margin-bottom: 10px;">
+                    <div>
+                        <label>Chiết khấu (%):</label>
+                        <select id="pos-discount-percent" onchange="renderCart()">
+                            <option value="0">0%</option><option value="5">5%</option><option value="10">10%</option><option value="15">15%</option><option value="20">20%</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Giảm thêm (VNĐ):</label>
+                        <input type="number" id="pos-discount-amount" value="0" placeholder="0" onkeyup="renderCart()" onchange="renderCart()">
+                    </div>
+                </div>
+                
+                <div class="summary-box">
+                    <div class="summary-row"><span>Cộng tiền hàng:</span><strong id="cart-subtotal">0đ</strong></div>
+                    <div class="summary-row" style="color: var(--danger);"><span>Khuyến mãi:</span><strong id="cart-total-discount">- 0đ</strong></div>
+                    <div class="summary-row" style="font-size: 1.2rem; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
+                        <strong>TỔNG CẦN TRẢ:</strong><strong style="color: var(--accent);" id="cart-final-total">0đ</strong>
+                    </div>
+                    
+                    <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                        <label style="color: var(--info);">Khách thanh toán (VNĐ):</label>
+                        <input type="number" id="pos-amount-paid" placeholder="Nhập số tiền khách đưa" style="border-color: var(--info); font-weight: bold; font-size: 1.1rem;" onkeyup="calculateChange()" onchange="calculateChange()">
+                        
+                        <div id="debt-status" class="summary-row" style="margin-top: 10px; display: none;">
+                            <span id="debt-label">Tiền thừa trả khách:</span>
+                            <strong id="debt-amount" style="color: var(--danger);">0đ</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-success" style="margin-top: 15px;" onclick="processCheckout()">LƯU & IN HÓA ĐƠN</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION: SẢN PHẨM & TỒN KHO -->
+    <section id="products">
+        <div class="card">
+            <h3>Thêm Sản Phẩm Mới</h3>
+            <div class="d-flex">
+                <input type="text" id="p-name" placeholder="Tên sản phẩm">
+                <input type="text" id="p-unit" placeholder="ĐVT" class="flex-small">
+                <input type="number" id="p-price" placeholder="Giá bán">
+                <input type="number" id="p-stock" placeholder="SL Tồn kho" class="flex-small">
+                <button class="btn btn-success" onclick="addProduct()">+ Thêm</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header-flex">
+                <h3>Quản Lý Tồn Kho & Sản Phẩm</h3>
+                <button class="btn btn-info btn-small" onclick="exportProductsCSV()">⬇️ Xuất File</button>
+            </div>
+            <div class="table-responsive">
+                <table id="product-table"><thead><tr><th>Tên</th><th>ĐVT</th><th>Giá</th><th>Tồn Kho</th><th>Thao tác</th></tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION: KHÁCH HÀNG & CÔNG NỢ -->
+    <section id="customers">
+        <div class="card">
+            <h3>Thêm Khách Hàng</h3>
+            <div class="d-flex" style="align-items: flex-start;">
+                <div style="flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 10px;">
+                    <input type="text" id="c-name" placeholder="Tên khách hàng">
+                    <input type="tel" id="c-phone" placeholder="Số điện thoại">
+                </div>
+                <div style="flex: 2; min-width: 200px; display: flex; flex-direction: column; gap: 10px;">
+                    <input type="text" id="c-address" placeholder="Địa chỉ chi tiết">
+                    <button class="btn btn-success" onclick="addCustomer()">+ Thêm Khách Hàng</button>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header-flex">
+                <h3>Theo Dõi Công Nợ Khách Hàng</h3>
+                <button class="btn btn-info btn-small" onclick="exportCustomersCSV()">⬇️ Xuất File</button>
+            </div>
+            <div class="table-responsive">
+                <table id="customer-table"><thead><tr><th>Tên</th><th>Điện thoại</th><th>Địa chỉ</th><th>Đang Nợ</th><th>Thao tác</th></tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION: LỊCH SỬ -->
+    <section id="history">
+        <div class="card">
+            <div class="card-header-flex">
+                <h3>Lịch Sử Bán Hàng</h3>
+                <button class="btn btn-info btn-small" onclick="exportHistoryCSV()">⬇️ Xuất Lịch Sử</button>
+            </div>
+            <div class="table-responsive">
+                <table id="history-table"><thead><tr><th>Mã HĐ</th><th>Khách hàng</th><th>Thực thu</th><th>Ghi Nợ</th><th>Thao tác</th></tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION: BÁO CÁO -->
+    <section id="reports">
+        <div class="card">
+            <h3>Báo Cáo Bán Hàng</h3>
+            <div class="d-flex" style="margin-bottom: 15px;">
+                <select id="report-filter" onchange="generateReport()">
+                    <option value="today">Hôm nay</option><option value="week">7 ngày qua</option><option value="month">Tháng này</option><option value="all">Tất cả thời gian</option>
+                </select>
+                <button class="btn btn-info" onclick="exportReportCSV()">📥 Xuất Báo Cáo</button>
+            </div>
+            <div class="table-responsive">
+                <table id="report-table">
+                    <thead><tr><th>Sản Phẩm</th><th>SL Đã Bán</th><th>Thành Tiền</th></tr></thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr><th colspan="2" style="text-align: right;">CỘNG TIỀN HÀNG:</th><th id="report-subtotal">0đ</th></tr>
+                        <tr style="color: var(--danger);"><th colspan="2" style="text-align: right;">TỔNG KHUYẾN MÃI:</th><th id="report-total-discount">- 0đ</th></tr>
+                        <tr style="background: #d4edda; color: var(--accent); font-size: 1.1rem;"><th colspan="2" style="text-align: right;">DOANH THU GHI NHẬN:</th><th id="report-final-revenue">0đ</th></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- KHU VỰC IN HÓA ĐƠN -->
+<div id="invoice-print">
+    <div style="text-align: center; margin-bottom: 10px;"><h2 style="margin:0;">HÓA ĐƠN BÁN HÀNG</h2><p style="margin:5px 0;">Hóa Đơn & Ghi Nhận Công Nợ</p></div>
+    <div style="border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 5px;">
+        Mã HĐ: <strong id="print-id"></strong><br>Ngày in: <span id="print-date"></span><br>Khách hàng: <strong id="print-customer"></strong><br>
+        Số điện thoại: <span id="print-phone"></span><br>Địa chỉ: <span id="print-address"></span>
+    </div>
+    <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 10px;">
+        <thead style="border-bottom: 1px solid #000;"><tr><th>Sản Phẩm</th><th>Số lượng</th><th>Đơn giá (đồng)</th><th>Thành tiền (đồng)</th></tr></thead>
+        <tbody id="print-items"></tbody>
+    </table>
+    <div style="border-top: 1px solid #000; padding-top: 5px; text-align: center;">
+        <p style="margin: 3px 0;">Cộng tiền hàng: <span id="print-subtotal"></span>đ</p>
+        <p style="margin: 3px 0;" id="print-discount-wrapper">Giảm giá: <span id="print-discount"></span>đ</p>
+        <h3 style="margin: 5px 0;">TỔNG CỘNG: <span id="print-final-total"></span>đ</h3>
+        <p style="margin: 3px 0;">Đã thanh toán: <span id="print-paid"></span>đ</p>
+        <p style="margin: 3px 0; font-weight: bold; border-top: 1px dotted #000; padding-top: 3px;">CÒN NỢ LẠI (đồng): <span id="print-debt"></span>đ</p>
+    </div>
+    <div style="text-align: center; margin-top: 20px; font-style: italic;">Xin cảm ơn quý khách!</div>
+</div>
+
+<script>
+    let products = JSON.parse(localStorage.getItem('pos_products')) || [];
+    let customers = JSON.parse(localStorage.getItem('pos_customers')) || [];
+    let invoices = JSON.parse(localStorage.getItem('pos_invoices')) || [];
+    let cart = [];
+    let currentFinalTotal = 0; 
+
+    function showSection(id) {
+        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active'); event.target.classList.add('active');
+        initData(); if(id === 'reports') generateReport();
+    }
+
+    function initData() { renderProductTable(); renderCustomerTable(); renderPOSProducts(); renderPOSCustomers(); renderHistory(); saveData(); }
+    function saveData() { localStorage.setItem('pos_products', JSON.stringify(products)); localStorage.setItem('pos_customers', JSON.stringify(customers)); localStorage.setItem('pos_invoices', JSON.stringify(invoices)); }
+
+    function downloadCSV(csvContent, filename) {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = filename;
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+
+    // --- SẢN PHẨM & TỒN KHO ---
+    function addProduct() {
+        const name = document.getElementById('p-name').value; const unit = document.getElementById('p-unit').value || 'Cái'; 
+        const price = parseInt(document.getElementById('p-price').value);
+        const stock = parseInt(document.getElementById('p-stock').value) || 0;
+        if(!name || !price) return alert('Nhập đủ Tên và Giá');
+        products.push({id: Date.now(), name, unit, price, stock}); initData();
+        document.getElementById('p-name').value = ''; document.getElementById('p-unit').value = ''; document.getElementById('p-price').value = ''; document.getElementById('p-stock').value = '';
+    }
+    
+    function renderProductTable() { 
+        document.querySelector('#product-table tbody').innerHTML = products.map(p => `
+            <tr>
+                <td>${p.name}</td><td>${p.unit || '-'}</td><td>${p.price.toLocaleString()}</td>
+                <td style="font-weight:bold; color:${p.stock <= 10 ? 'red' : 'green'}">${p.stock}</td>
+                <td style="display:flex; gap:5px;"><button class="btn btn-warning btn-small" onclick="updateStock(${p.id})">Nhập Kho</button> <button class="btn btn-danger btn-small" onclick="deleteProduct(${p.id})">Xóa</button></td>
+            </tr>`).join(''); 
+    }
+    
+    function updateStock(id) {
+        let p = products.find(prod => prod.id === id);
+        let addQty = prompt(`Sản phẩm ${p.name} đang tồn ${p.stock}.\nNhập số lượng nhập thêm vào kho:`, "0");
+        if(addQty && !isNaN(addQty)) { p.stock += parseInt(addQty); initData(); }
+    }
+    
+    function deleteProduct(id) { if(confirm('Xóa sản phẩm này?')) { products = products.filter(p => p.id !== id); initData(); } }
+    
+    function exportProductsCSV() { let csv = "\uFEFFTen San Pham,Gia Ban,Don Vi Tinh,Ton Kho\n"; products.forEach(p => { csv += `"${p.name}",${p.price},"${p.unit || ''}",${p.stock}\n`; }); downloadCSV(csv, `San_Pham_${Date.now()}.csv`); }
+
+    // --- KHÁCH HÀNG & CÔNG NỢ ---
+    function addCustomer() {
+        const name = document.getElementById('c-name').value; const phone = document.getElementById('c-phone').value; const address = document.getElementById('c-address').value;
+        if(!name) return alert('Nhập tên khách'); 
+        customers.push({id: Date.now(), name, phone, address, debt: 0}); initData();
+        document.getElementById('c-name').value = ''; document.getElementById('c-phone').value = ''; document.getElementById('c-address').value = '';
+    }
+    
+    function renderCustomerTable() { 
+        document.querySelector('#customer-table tbody').innerHTML = customers.map(c => {
+            let debtColor = c.debt > 0 ? 'var(--danger)' : 'black';
+            return `<tr><td>${c.name}</td><td>${c.phone || ''}</td><td>${c.address || ''}</td>
+            <td style="font-weight:bold; color:${debtColor}">${(c.debt || 0).toLocaleString()}đ</td>
+            <td style="display:flex; gap:5px;">
+                ${c.debt > 0 ? `<button class="btn btn-warning btn-small" onclick="payDebt(${c.id})">Thu Nợ</button>` : ''}
+                <button class="btn btn-danger btn-small" onclick="deleteCustomer(${c.id})">Xóa</button>
+            </td></tr>`;
+        }).join(''); 
+    }
+
+    function payDebt(id) {
+        let customer = customers.find(c => c.id === id);
+        let pay = prompt(`Khách hàng ${customer.name} đang nợ ${customer.debt.toLocaleString()}đ.\nNhập số tiền khách trả hôm nay:`, customer.debt);
+        if(pay && !isNaN(pay)) {
+            pay = parseFloat(pay);
+            if(pay > 0) {
+                customer.debt -= pay;
+                if(customer.debt < 0) customer.debt = 0; 
+                alert(`Thu nợ thành công! Khách còn nợ: ${customer.debt.toLocaleString()}đ`);
+                initData();
+            }
+        }
+    }
+
+    function deleteCustomer(id) { 
+        let c = customers.find(x => x.id === id);
+        if(c.debt > 0) return alert('Khách này đang còn nợ tiền, không thể xóa!');
+        if(confirm('Xóa khách hàng này?')) { customers = customers.filter(x => x.id !== id); initData(); } 
+    }
+    
+    function exportCustomersCSV() { let csv = "\uFEFFTen Khach Hang,SDT,Dia Chi,Cong No\n"; customers.forEach(c => { csv += `"${c.name}","${c.phone || ''}","${c.address || ''}",${c.debt || 0}\n`; }); downloadCSV(csv, `Khach_Hang_${Date.now()}.csv`); }
+
+    // --- BÁN HÀNG POS ---
+    function renderPOSProducts(filter = '') {
+        const div = document.getElementById('pos-product-list'); const filtered = products.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()));
+        div.innerHTML = filtered.map(p => {
+            let displayPrice = p.price.toLocaleString() + 'đ' + (p.unit ? '/' + p.unit : '');
+            let isOut = p.stock <= 0;
+            return `<div class="product-card ${isOut ? 'out-of-stock' : ''}" onclick="${isOut ? 'alert(\'Sản phẩm đã hết hàng trong kho!\')' : `addToCart(${p.id})`}">
+                <span class="stock-badge">Tồn: ${p.stock}</span>
+                <strong>${p.name}</strong><span style="color:var(--accent); font-weight:bold; font-size: 0.85rem;">${displayPrice}</span>
+            </div>`
+        }).join('');
+    }
+    
+    function filterProducts(val) { renderPOSProducts(val); }
+    function renderPOSCustomers() { document.getElementById('pos-customer-select').innerHTML = `<option value="">👤 Khách lẻ (Bắt buộc trả đủ, không ghi nợ)</option>` + customers.map(c => `<option value="${c.id}">${c.name} (Nợ cũ: ${(c.debt||0).toLocaleString()}đ)</option>`).join(''); }
+    
+    function addToCart(id) { 
+        const product = products.find(p => p.id === id); 
+        const item = cart.find(i => i.id === id); 
+        let currentQty = item ? item.qty : 0;
+        
+        if(currentQty + 1 > product.stock) {
+            return alert(`Trong kho chỉ còn ${product.stock} ${product.unit}. Không thể thêm!`);
+        }
+
+        if(item) item.qty++; else cart.push({...product, qty: 1}); 
+        renderCart(); 
+    }
+
+    function renderCart() {
+        const div = document.getElementById('cart-items');
+        if(cart.length === 0) { div.innerHTML = '<p style="color: #888; text-align:center; margin-top:20px;">Giỏ hàng trống</p>'; } 
+        else {
+            div.innerHTML = cart.map(i => `<div class="cart-item-row"><div class="cart-item-info"><span>${i.name} <b>x${i.qty} ${i.unit || ''}</b></span></div><div style="display:flex; align-items:center;"><span class="cart-item-price">${(i.price * i.qty).toLocaleString()}đ</span><button class="cart-btn-remove" onclick="removeFromCart(${i.id})">X</button></div></div>`).join('');
+        }
+        let subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+        let discountPercent = parseFloat(document.getElementById('pos-discount-percent').value) || 0; let discountAmount = parseFloat(document.getElementById('pos-discount-amount').value) || 0;
+        let totalDiscount = (subtotal * (discountPercent / 100)) + discountAmount; 
+        currentFinalTotal = subtotal - totalDiscount; if(currentFinalTotal < 0) currentFinalTotal = 0; 
+
+        document.getElementById('cart-subtotal').innerText = subtotal.toLocaleString() + 'đ'; 
+        document.getElementById('cart-total-discount').innerText = '- ' + totalDiscount.toLocaleString() + 'đ'; 
+        document.getElementById('cart-final-total').innerText = currentFinalTotal.toLocaleString() + 'đ';
+        
+        if(document.getElementById('pos-amount-paid').value === '') {
+            document.getElementById('pos-amount-paid').value = currentFinalTotal;
+        }
+        calculateChange();
+    }
+
+    function calculateChange() {
+        if(cart.length === 0) { document.getElementById('debt-status').style.display = 'none'; return; }
+        
+        let paid = parseFloat(document.getElementById('pos-amount-paid').value) || 0;
+        let diff = paid - currentFinalTotal;
+        let statusDiv = document.getElementById('debt-status');
+        let label = document.getElementById('debt-label');
+        let amount = document.getElementById('debt-amount');
+
+        statusDiv.style.display = 'flex';
+        
+        if(diff >= 0) {
+            label.innerText = 'Tiền thừa trả khách:';
+            amount.innerText = diff.toLocaleString() + 'đ';
+            amount.style.color = 'var(--accent)'; 
+        } else {
+            label.innerText = 'KHÁCH GHI NỢ:';
+            amount.innerText = Math.abs(diff).toLocaleString() + 'đ';
+            amount.style.color = 'var(--danger)'; 
+        }
+    }
+
+    function removeFromCart(id) { cart = cart.filter(i => i.id !== id); renderCart(); }
+
+    function processCheckout() {
+        if(cart.length === 0) return alert('Giỏ hàng trống!');
+        
+        const customerId = document.getElementById('pos-customer-select').value; 
+        let cName = 'Khách vãng lai'; let cPhone = ''; let cAddress = '';
+        let customerObj = null;
+
+        if(customerId) { 
+            customerObj = customers.find(c => c.id == customerId); 
+            cName = customerObj.name; cPhone = customerObj.phone; cAddress = customerObj.address; 
+        }
+
+        let paid = parseFloat(document.getElementById('pos-amount-paid').value) || 0;
+        let newDebt = currentFinalTotal - paid;
+
+        if(newDebt > 0 && !customerObj) {
+            return alert('LỖI: Khách vãng lai (không lưu tên) bắt buộc phải thanh toán đủ tiền, không được ghi nợ!');
+        }
+
+        // 1. Trừ Tồn Kho
+        cart.forEach(item => {
+            let p = products.find(prod => prod.id === item.id);
+            if(p && p.stock !== undefined) { p.stock -= item.qty; }
+        });
+
+        // 2. Ghi Công Nợ
+        if(newDebt > 0 && customerObj) {
+            customerObj.debt = (customerObj.debt || 0) + newDebt;
+        }
+
+        let subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+        let totalDiscount = subtotal - currentFinalTotal;
+
+        const invoice = { 
+            id: 'HĐ' + Date.now().toString().slice(-4), date: new Date().toLocaleString('vi-VN'), timestamp: Date.now(), 
+            customer: cName, phone: cPhone, address: cAddress, items: [...cart], 
+            subtotal: subtotal, totalDiscount: totalDiscount, total: currentFinalTotal,
+            paid: paid >= currentFinalTotal ? currentFinalTotal : paid, 
+            debtGenerated: newDebt > 0 ? newDebt : 0
+        };
+
+        invoices.unshift(invoice); 
+        saveData(); 
+        printInvoice(invoice);
+        
+        cart = []; 
+        document.getElementById('pos-discount-percent').value = "0"; 
+        document.getElementById('pos-discount-amount').value = "0"; 
+        document.getElementById('pos-amount-paid').value = ""; 
+        renderCart(); initData();
+    }
+
+    function printInvoice(inv) {
+        document.getElementById('print-id').innerText = inv.id; document.getElementById('print-date').innerText = inv.date; document.getElementById('print-customer').innerText = inv.customer; document.getElementById('print-phone').innerText = inv.phone ? inv.phone : '(Không có)'; document.getElementById('print-address').innerText = inv.address ? inv.address : '(Không có)';
+        document.getElementById('print-items').innerHTML = inv.items.map(i => `<tr><td style="padding: 3px 0;">${i.name}</td><td>${i.qty} ${i.unit || ''}</td><td>${i.price.toLocaleString()}</td><td style="text-align:right;">${(i.price * i.qty).toLocaleString()}</td></tr>`).join('');
+        
+        document.getElementById('print-subtotal').innerText = inv.subtotal.toLocaleString();
+        if(inv.totalDiscount > 0) { document.getElementById('print-discount-wrapper').style.display = 'block'; document.getElementById('print-discount').innerText = inv.totalDiscount.toLocaleString(); } else { document.getElementById('print-discount-wrapper').style.display = 'none'; }
+        
+        document.getElementById('print-final-total').innerText = inv.total.toLocaleString(); 
+        document.getElementById('print-paid').innerText = inv.paid.toLocaleString();
+        document.getElementById('print-debt').innerText = inv.debtGenerated.toLocaleString();
+        
+        window.print();
+    }
+
+    // --- LỊCH SỬ ---
+    function renderHistory() {
+        document.querySelector('#history-table tbody').innerHTML = invoices.map(inv => `<tr>
+            <td>${inv.id}<br><small style="color:#888">${inv.date.split(' ')[1]}</small></td>
+            <td>${inv.customer}</td>
+            <td style="font-weight:bold; color:var(--accent)">${inv.total.toLocaleString()}đ</td>
+            <td style="color:var(--danger)">${inv.debtGenerated > 0 ? inv.debtGenerated.toLocaleString()+'đ' : '0'}</td>
+            <td style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <button class="btn btn-info btn-small" onclick='printInvoice(${JSON.stringify(inv)})'>In</button>
+                <button class="btn btn-danger btn-small" onclick="deleteInvoice('${inv.id}')">Xóa</button>
+            </td></tr>`).join('');
+    }
+    
+    // Hàm xóa hóa đơn và hoàn lại dữ liệu
+    function deleteInvoice(id) {
+        if(confirm('Bạn có chắc chắn muốn xóa hóa đơn này?\n\nHệ thống sẽ:\n- Hoàn lại số lượng tồn kho.\n- Trừ đi công nợ khách hàng (nếu có).\n- Xóa dữ liệu khỏi báo cáo.')) {
+            const invIndex = invoices.findIndex(inv => inv.id === id);
+            if(invIndex === -1) return;
+            
+            const inv = invoices[invIndex];
+
+            // 1. Hoàn lại tồn kho
+            inv.items.forEach(item => {
+                let p = products.find(prod => prod.id === item.id);
+                if(p && p.stock !== undefined) {
+                    p.stock += item.qty;
+                }
+            });
+
+            // 2. Hoàn lại công nợ khách hàng (nếu có)
+            if(inv.debtGenerated > 0) {
+                // Tìm khách hàng dựa trên tên và SĐT
+                let c = customers.find(cust => cust.name === inv.customer && (cust.phone || '') === (inv.phone || ''));
+                if(c) {
+                    c.debt -= inv.debtGenerated;
+                    if(c.debt < 0) c.debt = 0; // Đảm bảo nợ không bị âm
+                }
+            }
+
+            // 3. Xóa hóa đơn khỏi danh sách
+            invoices.splice(invIndex, 1);
+            
+            initData();
+            if(document.getElementById('reports').classList.contains('active')) generateReport();
+        }
+    }
+
+    function exportHistoryCSV() {
+        if(invoices.length === 0) return alert('Chưa có dữ liệu lịch sử!');
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + "Ma Hoa Don,Ngay Tao,Khach Hang,Tong Tien Hang,Giam Gia,Tong Cong,Da Thanh Toan,No Phat Sinh\n";
+        invoices.forEach(inv => { csvContent += `"${inv.id}","${inv.date}","${inv.customer}",${inv.subtotal},${inv.totalDiscount},${inv.total},${inv.paid},${inv.debtGenerated}\n`; });
+        downloadCSV(csvContent, `Lich_Su_Ban_Hang_${Date.now()}.csv`);
+    }
+
+    // --- BÁO CÁO ---
+    function generateReport() {
+        const filter = document.getElementById('report-filter').value; const now = new Date(); let reportData = {}; let totalSubtotal = 0; let totalDiscount = 0; let finalRevenue = 0;
+        invoices.forEach(inv => {
+            let invDate = inv.timestamp ? new Date(inv.timestamp) : new Date(); let isInclude = false;
+            if(filter === 'all') isInclude = true; else if(filter === 'today') isInclude = invDate.toDateString() === now.toDateString(); else if(filter === 'week') isInclude = Math.ceil(Math.abs(now - invDate) / (1000 * 60 * 60 * 24)) <= 7; else if(filter === 'month') isInclude = invDate.getMonth() === now.getMonth() && invDate.getFullYear() === now.getFullYear();
+            if(isInclude) {
+                inv.items.forEach(item => { let key = item.name + (item.unit ? ` (${item.unit})` : ''); if(!reportData[key]) reportData[key] = { qty: 0, revenue: 0, unit: item.unit || '' }; reportData[key].qty += item.qty; reportData[key].revenue += (item.price * item.qty); });
+                totalSubtotal += inv.subtotal; totalDiscount += inv.totalDiscount || 0; finalRevenue += inv.total;
+            }
+        });
+        document.querySelector('#report-table tbody').innerHTML = Object.keys(reportData).map(key => `<tr><td>${key}</td><td>${reportData[key].qty} ${reportData[key].unit}</td><td style="font-weight:bold;">${reportData[key].revenue.toLocaleString()}đ</td></tr>`).join('');
+        document.getElementById('report-subtotal').innerText = totalSubtotal.toLocaleString() + 'đ'; document.getElementById('report-total-discount').innerText = '- ' + totalDiscount.toLocaleString() + 'đ'; document.getElementById('report-final-revenue').innerText = finalRevenue.toLocaleString() + 'đ';
+    }
+    
+    function exportReportCSV() {
+        const select = document.getElementById('report-filter'); let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + `BAO CAO BAN HANG (${select.options[select.selectedIndex].text})\nTen San Pham,So Luong Da Ban,Thanh Tien Chua Giam (VND)\n`;
+        document.querySelectorAll('#report-table tbody tr').forEach(row => { const cols = row.querySelectorAll('td'); csvContent += `"${cols[0].innerText}","${cols[1].innerText}",${cols[2].innerText.replace(/đ|,|\./g, '')}\n`; });
+        csvContent += `\n"CONG TIEN HANG","",${document.getElementById('report-subtotal').innerText.replace(/đ|,|\./g, '')}\n`; csvContent += `"TONG KHUYEN MAI","",${document.getElementById('report-total-discount').innerText.replace(/đ|,|\.|-| /g, '')}\n`; csvContent += `"DOANH THU GHI NHAN","",${document.getElementById('report-final-revenue').innerText.replace(/đ|,|\./g, '')}\n`;
+        downloadCSV(csvContent, `Bao_Cao_${Date.now()}.csv`);
+    }
+
+    initData();
+</script>
+
+</body>
+</html>

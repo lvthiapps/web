@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giá Thu Mua HT26</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 450px;
+            background-color: white;
+            min-height: 100vh;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            padding-bottom: 20px;
+        }
+
+        .header {
+            background-color: #333333;
+            color: white;
+            padding: 12px 15px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .header .logo {
+            color: #4CAF50;
+            font-size: 10px;
+            margin-right: 8px;
+        }
+
+        .form-content {
+            padding: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            font-size: 22px;
+            margin-bottom: 8px;
+            color: #000;
+        }
+
+        .input-field {
+            width: 100%;
+            background-color: #d1d1d1;
+            border: 2px solid #000;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 20px;
+            outline: none;
+            display: block;
+        }
+
+        .btn-compute {
+            width: 100%;
+            background-color: #43a047;
+            color: #000;
+            border: 2px solid #000;
+            border-radius: 6px;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 0 20px 0;
+            text-transform: uppercase;
+        }
+
+        .btn-compute:active {
+            background-color: #388e3c;
+        }
+
+        .btn-share {
+            width: 100%;
+            background-color: #0068ff; /* Màu xanh Zalo */
+            color: white;
+            border: 2px solid #004bbb;
+            border-radius: 6px;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        .btn-share:active {
+            background-color: #004bbb;
+        }
+
+        .readonly-field {
+            background-color: #e0e0e0;
+            cursor: not-allowed;
+            font-weight: bold;
+            color: #d32f2f; /* Màu đỏ cho kết quả dễ nhìn */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header">
+            <span class="logo">v=d/t</span>
+            <span>GIÁ THU MUA HT26</span>
+        </div>
+
+        <div class="form-content">
+            
+            <div class="form-group">
+                <label>Ẩm độ tươi (%)</label>
+                <input type="text" inputmode="decimal" id="amDo" class="input-field" placeholder="0" oninput="formatCurrency(this)">
+            </div>
+
+            <div class="form-group">
+                <label>Giá định (đồng/kg)</label>
+                <input type="text" inputmode="decimal" id="giaDinh" class="input-field" placeholder="0" oninput="formatCurrency(this)">
+            </div>
+
+            <div class="form-group">
+                <label>Cộng hỗ trợ theo giống (đồng)</label>
+                <input type="text" inputmode="decimal" id="hoTro" class="input-field" value="750" oninput="formatCurrency(this)">
+            </div>
+
+            <button class="btn-compute" onclick="tinhToan()">TÍNH GIÁ THU MUA</button>
+
+            <div class="form-group">
+                <label>Giá thu mua (đồng/kg)</label>
+                <input type="text" id="giaThuMua" class="input-field readonly-field" readonly placeholder="Kết quả">
+            </div>
+
+            <div class="form-group">
+                <label>Giá thu mua cộng bốc xếp 60đ (đồng/kg)</label>
+                <input type="text" id="giaThuMuaBocXep" class="input-field readonly-field" readonly placeholder="Kết quả">
+            </div>
+
+            <button class="btn-share" onclick="chiaSeZalo()">CHIA SẺ KẾT QUẢ</button>
+
+        </div>
+    </div>
+
+    <script>
+        // Hàm tự động thêm dấu phẩy phân cách hàng nghìn
+        function formatCurrency(input) {
+            let value = input.value.replace(/[^0-9.]/g, '');
+            let parts = value.split('.');
+            if (parts.length > 2) {
+                parts.pop(); 
+            }
+            if (parts[0]) {
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+            input.value = parts.join('.');
+        }
+
+        // Hàm gỡ bỏ dấu phẩy để lấy số chuẩn
+        function parseValue(id) {
+            let val = document.getElementById(id).value.replace(/,/g, '');
+            return parseFloat(val) || 0; 
+        }
+
+        // Hàm định dạng kết quả (làm tròn số nguyên & thêm phẩy)
+        function formatOutput(num) {
+            let roundedNum = Math.round(num); 
+            return roundedNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // Hàm tính toán
+        function tinhToan() {
+            let amDo = parseValue('amDo');
+            let giaDinh = parseValue('giaDinh');
+            let hoTro = parseValue('hoTro');
+
+            let giaThuMua = ((100 - amDo) / 75) * (giaDinh + hoTro);
+            let giaThuMuaBocXep = giaThuMua + 60;
+
+            document.getElementById('giaThuMua').value = formatOutput(giaThuMua);
+            document.getElementById('giaThuMuaBocXep').value = formatOutput(giaThuMuaBocXep);
+        }
+
+        // Hàm Chia sẻ / Xuất dữ liệu
+        function chiaSeZalo() {
+            // Lấy dữ liệu hiển thị trên các ô
+            let amDo = document.getElementById('amDo').value || "0";
+            let giaDinh = document.getElementById('giaDinh').value || "0";
+            let hoTro = document.getElementById('hoTro').value || "0";
+            let giaThuMua = document.getElementById('giaThuMua').value;
+            let giaThuMuaBocXep = document.getElementById('giaThuMuaBocXep').value;
+
+            // Kiểm tra xem đã bấm Compute chưa
+            if (!giaThuMua) {
+                alert("Vui lòng bấm TÍNH GIÁ THU MUA để tính toán trước khi chia sẻ!");
+                return;
+            }
+
+            // Soạn nội dung tin nhắn để xuất ra
+            let textToShare = `BÁO GIÁ THU MUA HT26\n` +
+                              `------------------------\n` +
+                              `- Ẩm độ tươi: ${amDo}%\n` +
+                              `- Giá định: ${giaDinh} đ/kg\n` +
+                              `- Hỗ trợ theo giống: ${hoTro} đ\n` +
+                              `=> GIÁ THU MUA: ${giaThuMua} đ/kg\n` +
+                              `=> GIÁ (+ Bốc xếp): ${giaThuMuaBocXep} đ/kg`;
+
+            // Gọi API Chia sẻ của điện thoại (Hỗ trợ iOS, Android)
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Báo Giá Thu Mua HT26',
+                    text: textToShare
+                }).catch((error) => console.log('Lỗi chia sẻ:', error));
+            } else {
+                // Nếu dùng trên máy tính bàn hoặc trình duyệt không hỗ trợ, sẽ tự động copy vào Clipboard
+                navigator.clipboard.writeText(textToShare).then(() => {
+                    alert("Đã sao chép nội dung báo giá!\nBạn có thể mở Zalo và dán (Ctrl+V) để gửi cho khách.");
+                }).catch(err => {
+                    alert("Không thể sao chép, vui lòng thử lại.");
+                });
+            }
+        }
+    </script>
+
+</body>
+</html>
